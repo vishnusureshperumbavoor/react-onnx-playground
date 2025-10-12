@@ -1,5 +1,5 @@
 import { useNavigate, Routes, Route } from "react-router-dom";
-import { MnistComponent, YoloComponent, SamComponent } from "./components";
+import { Mnist, Yolo, Sam } from "./components";
 
 function Home() {
   const navigate = useNavigate();
@@ -85,9 +85,9 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
-      <Route path="/mnist" element={<MnistComponent />} />
-      <Route path="/yolo" element={<YoloComponent />} />
-      <Route path="/sam2" element={<SamComponent />} />
+      <Route path="/mnist" element={<Mnist />} />
+      <Route path="/yolo" element={<Yolo />} />
+      <Route path="/sam2" element={<Sam />} />
     </Routes>
   );
 }

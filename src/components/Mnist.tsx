@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import * as ort from "onnxruntime-web";
 
-export function MnistComponent() {
+export function Mnist() {
   const [output, setOutput] = useState<Float32Array | null>(null);
   const [loading, setLoading] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
