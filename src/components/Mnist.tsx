@@ -23,6 +23,26 @@ export function Mnist() {
     loadModel();
   }, []);
 
+  function clearCanvas() {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    setOutput(null);
+
+    ctx.fillStyle = "white";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.lineWidth = 16;
+    ctx.lineCap = "round";
+    ctx.strokeStyle = "black";
+  }
+
+  useEffect(() => {
+    clearCanvas();
+  }, []);
+
   function getPointerPosition(e: React.MouseEvent | React.TouchEvent) {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
@@ -76,17 +96,6 @@ export function Mnist() {
     runMnistModel();
   }
 
-  function clearCanvas() {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "white";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-  }
-
-  // Convert canvas to 28x28 grayscale Float32Array
   function getImageData() {
     const canvas = canvasRef.current;
     if (!canvas) return new Float32Array(1 * 1 * 28 * 28).fill(0);
@@ -111,8 +120,8 @@ export function Mnist() {
       const session = sessionRef.current;
       if (!session) throw new Error("Model not loaded");
       const inputType = "float32";
-      const imgData = getImageData(); // Float32Array of shape [1*1*28*28]
-      const inputShape = [1, 1, 28, 28]; // batch, channel, height, width
+      const imgData = getImageData();
+      const inputShape = [1, 1, 28, 28];
       const inputTensor = new ort.Tensor(inputType, imgData, inputShape);
       const feeds: Record<string, ort.Tensor> = {};
       feeds[session.inputNames[0]] = inputTensor;
@@ -130,18 +139,6 @@ export function Mnist() {
       setLoading(false);
     }
   }
-
-  // Initialize canvas background
-  useEffect(() => {
-    clearCanvas();
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    ctx.lineWidth = 16;
-    ctx.lineCap = "round";
-    ctx.strokeStyle = "black";
-  }, []);
 
   return (
     <div style={{ padding: 20 }}>
@@ -171,10 +168,8 @@ export function Mnist() {
       {loading && <p>Loading model or running inference...</p>}
       {!loading && output && (
         <>
-          <h2>Model output (digit class probabilities):</h2>
           <p>
             {(() => {
-              // Softmax calculation
               const exp = Array.from(output).map((v) => Math.exp(v));
               const sumExp = exp.reduce((a, b) => a + b, 0);
               const probs = exp.map((v) => v / sumExp);

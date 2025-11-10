@@ -1,11 +1,12 @@
 ```
-assetsInclude: ["**/*.onnx"],
-  optimizeDeps: {
-    exclude: ["onnxruntime-web"],
-  },
+npm install
+npm run dev
 ```
-add the above line in defineConfig of vite.config.json
 
-Model has to be added in public folder to load
+Models available
+1. MNIST
+2. YOLO
+3. SAM
 
+MNIST Demo
 [Twitter/X Demo](https://x.com/vspeeeeee/status/1948057594507223303)
