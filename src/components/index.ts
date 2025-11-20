@@ -1,3 +1,4 @@
 export { Mnist } from "./Mnist";
-export { Sam } from "./Sam";
+export { Sam2Component } from "./Sam2Component";
+export { Sam3Component } from "./Sam3Component";
 export { Yolo } from "./Yolo";

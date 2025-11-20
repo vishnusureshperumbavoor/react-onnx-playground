@@ -1,13 +1,7 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import * as ort from "onnxruntime-web";
-import { get, set } from "idb-keyval"; // Add this import
-
-type ModelInfo = {
-  name: string;
-  url: string;
-  size: number;
-  key: string;
-};
+import { get, set } from "idb-keyval";
+import type { ModelInfo } from "../types/common";
 
 const models: { sam_b: ModelInfo[] } = {
   sam_b: [
@@ -39,7 +33,7 @@ async function fetchAndCacheModel(model: ModelInfo): Promise<ArrayBuffer> {
   }
 }
 
-export const Sam = () => {
+export const Sam2Component = () => {
   const [encoderSession, setEncoderSession] =
     useState<ort.InferenceSession | null>(null);
   const [decoderSession, setDecoderSession] =

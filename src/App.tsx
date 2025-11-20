@@ -1,5 +1,6 @@
 import { useNavigate, Routes, Route } from "react-router-dom";
-import { Mnist, Yolo, Sam } from "./components";
+import { Mnist, Yolo, Sam2Component } from "./components";
+import { Sam3Component } from "./components/Sam3Component";
 
 function Home() {
   const navigate = useNavigate();
@@ -11,7 +12,7 @@ function Home() {
       route: "/mnist",
     },
     {
-      title: "YOLO",
+      title: "YOLOv11",
       description: "Object detection",
       route: "/yolo",
     },
@@ -19,6 +20,11 @@ function Home() {
       title: "SAM2",
       description: "Segment Anything Model v2",
       route: "/sam2",
+    },
+    {
+      title: "SAM3",
+      description: "Segment Anything Model v3",
+      route: "/sam3",
     },
   ];
 
@@ -87,7 +93,8 @@ function App() {
       <Route path="/" element={<Home />} />
       <Route path="/mnist" element={<Mnist />} />
       <Route path="/yolo" element={<Yolo />} />
-      <Route path="/sam2" element={<Sam />} />
+      <Route path="/sam2" element={<Sam2Component />} />
+      <Route path="/sam3" element={<Sam3Component />} />
     </Routes>
   );
 }
