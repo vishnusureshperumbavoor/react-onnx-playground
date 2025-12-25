@@ -72,30 +72,96 @@ export const Sam2Component = () => {
   };
 
   return (
-    <div style={{ padding: 20 }}>
-      <h1>SAM2 ONNX Runtime Web</h1>
-      {loading && <p>Loading SAM models...</p>}
-      {!loading && encoderSession && decoderSession && (
-        <p>Encoder and Decoder models loaded. Ready for inference.</p>
-      )}
-      {!loading && (!encoderSession || !decoderSession) && (
-        <p>Failed to load one or both models.</p>
-      )}
-      <div style={{ marginTop: 20 }}>
-        <img
-          src={imageUrl}
-          alt="Test"
-          style={{ maxWidth: 400, border: "1px solid #ccc" }}
-          onLoad={handleImageLoad}
-        />
-        <br />
-        <button
-          onClick={handleSegment}
-          disabled={!encoderSession || !decoderSession || !imageLoaded}
-          style={{ marginTop: 10 }}
-        >
-          Run Segmentation
-        </button>
+    <div style={{ padding: "40px 20px", maxWidth: "1000px", margin: "0 auto" }}>
+      <div style={{ textAlign: "center", marginBottom: "40px" }}>
+        <h1>SAM2 Segmentation</h1>
+        <p style={{ fontSize: "1.1em", color: "#a1a1aa" }}>
+          Segment Anything Model v2 - Advanced image segmentation
+        </p>
+      </div>
+
+      <div style={{ 
+        background: "rgba(30, 30, 46, 0.6)",
+        backdropFilter: "blur(10px)",
+        border: "1px solid rgba(129, 140, 248, 0.2)",
+        borderRadius: "20px",
+        padding: "32px",
+        boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
+      }}>
+        {loading && (
+          <div style={{ 
+            padding: "24px",
+            background: "rgba(99, 102, 241, 0.1)",
+            borderRadius: "12px",
+            border: "1px solid rgba(129, 140, 248, 0.2)",
+            textAlign: "center",
+          }}>
+            <p style={{ margin: 0, color: "#818cf8", fontSize: "1.1em" }}>
+              🔄 Loading SAM models... Please wait.
+            </p>
+          </div>
+        )}
+        
+        {!loading && encoderSession && decoderSession && (
+          <div style={{ 
+            padding: "16px 24px",
+            background: "linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(16, 185, 129, 0.15) 100%)",
+            borderRadius: "12px",
+            border: "1px solid rgba(34, 197, 94, 0.3)",
+            textAlign: "center",
+            marginBottom: "24px",
+          }}>
+            <p style={{ margin: 0, color: "#4ade80", fontSize: "1.1em" }}>
+              ✅ Models loaded successfully! Ready for inference.
+            </p>
+          </div>
+        )}
+        
+        {!loading && (!encoderSession || !decoderSession) && (
+          <div style={{ 
+            padding: "16px 24px",
+            background: "rgba(239, 68, 68, 0.1)",
+            borderRadius: "12px",
+            border: "1px solid rgba(239, 68, 68, 0.3)",
+            textAlign: "center",
+            marginBottom: "24px",
+          }}>
+            <p style={{ margin: 0, color: "#f87171", fontSize: "1.1em" }}>
+              ❌ Failed to load one or both models.
+            </p>
+          </div>
+        )}
+        
+        <div style={{ 
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: "20px",
+        }}>
+          <div style={{
+            borderRadius: "12px",
+            overflow: "hidden",
+            boxShadow: "0 8px 20px rgba(99, 102, 241, 0.2)",
+          }}>
+            <img
+              src={imageUrl}
+              alt="Test"
+              style={{ 
+                maxWidth: "100%",
+                width: 500,
+                display: "block",
+              }}
+              onLoad={handleImageLoad}
+            />
+          </div>
+          
+          <button
+            onClick={handleSegment}
+            disabled={!encoderSession || !decoderSession || !imageLoaded}
+          >
+            <span>✂️ Run Segmentation</span>
+          </button>
+        </div>
       </div>
     </div>
   );

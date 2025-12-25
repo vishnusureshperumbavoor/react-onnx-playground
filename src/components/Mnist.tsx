@@ -141,17 +141,35 @@ export function Mnist() {
   }
 
   return (
-    <div style={{ padding: 20 }}>
-      <h1>MNIST ONNX Runtime Web</h1>
-      <div>
+    <div style={{ padding: "30px 20px", maxWidth: "600px", margin: "0 auto" }}>
+      <div style={{ textAlign: "center", marginBottom: "24px" }}>
+        <h2>MNIST Recognition</h2>
+        <p style={{ fontSize: "0.95em", color: "#a1a1aa", margin: "8px 0 0 0" }}>
+          Draw a digit and let AI recognize it
+        </p>
+      </div>
+      
+      <div style={{ 
+        background: "rgba(30, 30, 46, 0.6)",
+        backdropFilter: "blur(10px)",
+        border: "1px solid rgba(129, 140, 248, 0.2)",
+        borderRadius: "16px",
+        padding: "24px",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
+      }}>
         <canvas
           ref={canvasRef}
           width={280}
           height={280}
           style={{
-            border: "1px solid #ccc",
+            border: "2px solid rgba(129, 140, 248, 0.3)",
+            borderRadius: "12px",
             background: "white",
             touchAction: "none",
+            boxShadow: "0 4px 12px rgba(99, 102, 241, 0.2)",
           }}
           onMouseDown={startDrawing}
           onMouseMove={draw}
@@ -161,14 +179,37 @@ export function Mnist() {
           onTouchMove={draw}
           onTouchEnd={endDrawing}
         />
-        <div style={{ marginTop: 10 }}>
-          <button onClick={clearCanvas}>Clear</button>
+        <div style={{ marginTop: 16 }}>
+          <button onClick={clearCanvas}>
+            <span>Clear Canvas</span>
+          </button>
         </div>
-      </div>
-      {loading && <p>Loading model or running inference...</p>}
-      {!loading && output && (
-        <>
-          <p>
+        
+        {loading && (
+          <div style={{ 
+            marginTop: 20,
+            padding: "12px 20px",
+            background: "rgba(99, 102, 241, 0.1)",
+            borderRadius: "10px",
+            border: "1px solid rgba(129, 140, 248, 0.2)",
+          }}>
+            <p style={{ margin: 0, color: "#818cf8", fontSize: "0.9em" }}>
+              🔄 Processing...
+            </p>
+          </div>
+        )}
+        
+        {!loading && output && (
+          <div style={{ 
+            marginTop: 20,
+            padding: "20px 28px",
+            background: "linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%)",
+            borderRadius: "12px",
+            border: "1px solid rgba(129, 140, 248, 0.3)",
+            textAlign: "center",
+            width: "100%",
+            maxWidth: "280px",
+          }}>
             {(() => {
               const exp = Array.from(output).map((v) => Math.exp(v));
               const sumExp = exp.reduce((a, b) => a + b, 0);
@@ -177,15 +218,44 @@ export function Mnist() {
               const predProb = probs[predIdx];
               return (
                 <>
-                  Predicted digit: <b>{predIdx}</b> (
-                  {(predProb * 100).toFixed(2)}% sure)
+                  <div style={{ fontSize: "3em", marginBottom: "8px", fontWeight: "bold" }}>
+                    {predIdx}
+                  </div>
+                  <p style={{ 
+                    fontSize: "1em", 
+                    color: "#e4e4e7",
+                    margin: 0,
+                  }}>
+                    Predicted: <b style={{ color: "#818cf8" }}>{predIdx}</b>
+                  </p>
+                  <p style={{ 
+                    fontSize: "0.9em",
+                    color: "#a1a1aa",
+                    marginTop: "4px",
+                    marginBottom: 0,
+                  }}>
+                    {(predProb * 100).toFixed(1)}% confidence
+                  </p>
                 </>
               );
             })()}
-          </p>
-        </>
-      )}
-      {!loading && !output && <p>No output from model.</p>}
+          </div>
+        )}
+        
+        {!loading && !output && (
+          <div style={{ 
+            marginTop: 20,
+            padding: "12px 20px",
+            background: "rgba(161, 161, 170, 0.1)",
+            borderRadius: "10px",
+            border: "1px solid rgba(161, 161, 170, 0.2)",
+          }}>
+            <p style={{ margin: 0, color: "#a1a1aa", fontSize: "0.9em" }}>
+              Draw a digit to see predictions
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

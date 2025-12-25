@@ -128,58 +128,164 @@ export const Yolo = () => {
     const image = imageRef.current;
     const canvas = canvasRef.current;
     if (predictions.length > 0 && image && canvas) {
+      // Set canvas to match the displayed size
       canvas.width = image.clientWidth;
       canvas.height = image.clientHeight;
-      renderBoxes(canvas, predictions);
+      
+      // Calculate scale factors from natural to displayed size
+      const scaleX = image.clientWidth / image.naturalWidth;
+      const scaleY = image.clientHeight / image.naturalHeight;
+      
+      // Scale the predictions to match displayed size
+      const scaledPredictions = predictions.map(pred => ({
+        ...pred,
+        box: [
+          pred.box[0] * scaleX,
+          pred.box[1] * scaleY,
+          pred.box[2] * scaleX,
+          pred.box[3] * scaleY,
+        ] as [number, number, number, number],
+      }));
+      
+      renderBoxes(canvas, scaledPredictions);
     }
   }, [predictions]);
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2>YOLO: Object Detection</h2>
-      <div style={{ position: "relative", maxWidth: "700px" }}>
-        <img
-          ref={imageRef}
-          src={busImage}
-          alt="Preview"
-          style={{ width: "100%", height: "auto" }}
-          onLoad={clearPredictions}
-        />
-        <canvas
-          ref={canvasRef}
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-          }}
-        />
+    <div style={{ padding: "20px", maxWidth: "1200px", margin: "0 auto" }}>
+      <div style={{ textAlign: "center", marginBottom: "24px" }}>
+        <h2>YOLOv11 Object Detection</h2>
       </div>
+      
+      <div style={{ 
+        background: "rgba(30, 30, 46, 0.6)",
+        backdropFilter: "blur(10px)",
+        border: "1px solid rgba(129, 140, 248, 0.2)",
+        borderRadius: "16px",
+        padding: "24px",
+        boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
+        display: "flex",
+        gap: "24px",
+        alignItems: "flex-start",
+      }}>
+        {/* Left side - Image */}
+        <div style={{ 
+          flex: "1",
+          minWidth: 0,
+          maxWidth: "600px",
+        }}>
+          <div style={{ 
+            position: "relative", 
+            width: "100%",
+            maxHeight: "600px",
+            borderRadius: "12px",
+            overflow: "hidden",
+            boxShadow: "0 4px 12px rgba(99, 102, 241, 0.2)",
+          }}>
+            <img
+              ref={imageRef}
+              src={busImage}
+              alt="Preview"
+              style={{ 
+                width: "100%", 
+                height: "auto",
+                maxHeight: "600px",
+                objectFit: "contain",
+                display: "block",
+              }}
+              onLoad={clearPredictions}
+            />
+            <canvas
+              ref={canvasRef}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+              }}
+            />
+          </div>
+        </div>
 
-      <div
-        style={{
-          marginTop: "15px",
+        {/* Right side - Controls and Output */}
+        <div style={{
+          flex: "0 0 300px",
           display: "flex",
-          gap: "10px",
-          alignItems: "center",
-        }}
-      >
-        {/* Disable the button until the model is fully loaded in the worker */}
-        <button
-          onClick={handlePredict}
-          disabled={!isModelReady || !!loadingText}
-        >
-          {loadingText
-            ? loadingText
-            : isModelReady
-            ? "Predict"
-            : "Initializing Model..."}
-        </button>
-        <button onClick={clearPredictions} disabled={!predictions.length}>
-          Clear
-        </button>
-        {loadingText && <p>{loadingText}</p>}
+          flexDirection: "column",
+          gap: "16px",
+        }}>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "10px",
+            }}
+          >
+            <button
+              onClick={handlePredict}
+              disabled={!isModelReady || !!loadingText}
+              style={{ width: "100%" }}
+            >
+              <span>
+                {loadingText
+                  ? loadingText
+                  : isModelReady
+                  ? "🎯 Detect Objects"
+                  : "⏳ Initializing..."}
+              </span>
+            </button>
+            <button 
+              onClick={clearPredictions} 
+              disabled={!predictions.length}
+              style={{
+                background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
+                width: "100%",
+              }}
+            >
+              <span>Clear</span>
+            </button>
+          </div>
+          
+          {loadingText && (
+            <div style={{ 
+              padding: "12px 20px",
+              background: "rgba(99, 102, 241, 0.1)",
+              borderRadius: "10px",
+              border: "1px solid rgba(129, 140, 248, 0.2)",
+            }}>
+              <p style={{ margin: 0, color: "#818cf8", fontSize: "0.9em" }}>
+                {loadingText}
+              </p>
+            </div>
+          )}
+          
+          {predictions.length > 0 && (
+            <div style={{ 
+              padding: "12px 20px",
+              background: "linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%)",
+              borderRadius: "10px",
+              border: "1px solid rgba(129, 140, 248, 0.3)",
+            }}>
+              <p style={{ margin: 0, color: "#e4e4e7", fontSize: "0.95em" }}>
+                ✅ Detected <b style={{ color: "#818cf8" }}>{predictions.length}</b> object(s)
+              </p>
+            </div>
+          )}
+
+          {!loadingText && !predictions.length && isModelReady && (
+            <div style={{ 
+              padding: "12px 20px",
+              background: "rgba(161, 161, 170, 0.1)",
+              borderRadius: "10px",
+              border: "1px solid rgba(161, 161, 170, 0.2)",
+            }}>
+              <p style={{ margin: 0, color: "#a1a1aa", fontSize: "0.9em" }}>
+                Click "Detect Objects" to analyze the image
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

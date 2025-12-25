@@ -2,20 +2,17 @@ import { useEffect, useState, useRef } from "react";
 import * as ort from "onnxruntime-web";
 import { fetchAndCacheModel } from "../utils/fetchAndCacheModel";
 
-// --- Configuration ---
-// We use Xenova's quantized models because they are single-file and web-optimized.
-// The 'sam3' repo models are multi-file and will crash without complex VFS handling.
 const models = {
   encoder: {
     name: "sam-b-encoder-quant",
     url: "https://huggingface.co/Xenova/sam-vit-base/resolve/main/onnx/vision_encoder_quantized.onnx",
-    size: 95, // ~95MB
+    size: 95,
     key: "encoder",
   },
   decoder: {
     name: "sam-b-decoder-quant",
     url: "https://huggingface.co/Xenova/sam-vit-base/resolve/main/onnx/prompt_encoder_mask_decoder_quantized.onnx",
-    size: 4, // ~4MB
+    size: 4,
     key: "decoder",
   },
 };
@@ -23,13 +20,11 @@ const models = {
 const MODEL_INPUT_SIZE = 1024;
 
 export const Sam3Component = () => {
-  // --- Sessions ---
   const [encoderSession, setEncoderSession] =
     useState<ort.InferenceSession | null>(null);
   const [decoderSession, setDecoderSession] =
     useState<ort.InferenceSession | null>(null);
 
-  // --- State ---
   const [loading, setLoading] = useState(false);
   const [processingEncoder, setProcessingEncoder] = useState(false);
   const [encoderProgress, setEncoderProgress] = useState(0);
@@ -282,98 +277,142 @@ export const Sam3Component = () => {
   }
 
   return (
-    <div style={{ padding: 20, fontFamily: "sans-serif" }}>
-      <h1>Segment Anything (Web Optimized)</h1>
-
-      {/* Status Panel */}
-      <div style={{ marginBottom: 20 }}>
-        <div>
-          <strong>Encoder:</strong> {formatPercent(encoderProgress)}%
-          <div
-            style={{
-              background: "#eee",
-              height: 6,
-              width: 200,
-              borderRadius: 4,
-            }}
-          >
-            <div
-              style={{
-                background: "#4caf50",
-                width: `${encoderProgress}%`,
-                height: "100%",
-                borderRadius: 4,
-                transition: "width 0.2s",
-              }}
-            />
-          </div>
-        </div>
-        <div style={{ marginTop: 10 }}>
-          <strong>Decoder:</strong> {formatPercent(decoderProgress)}%
-          <div
-            style={{
-              background: "#eee",
-              height: 6,
-              width: 200,
-              borderRadius: 4,
-            }}
-          >
-            <div
-              style={{
-                background: "#2196f3",
-                width: `${decoderProgress}%`,
-                height: "100%",
-                borderRadius: 4,
-                transition: "width 0.2s",
-              }}
-            />
-          </div>
-        </div>
+    <div style={{ padding: "40px 20px", maxWidth: "1000px", margin: "0 auto" }}>
+      <div style={{ textAlign: "center", marginBottom: "40px" }}>
+        <h1>SAM3 Interactive Segmentation</h1>
+        <p style={{ fontSize: "1.1em", color: "#a1a1aa" }}>
+          Segment Anything Model v3 - Click to segment objects interactively
+        </p>
       </div>
 
-      {/* Messages */}
-      <div style={{ minHeight: 30 }}>
-        {processingEncoder && (
-          <span style={{ color: "#e65100" }}>
-            Processing Image... (This runs once)
-          </span>
-        )}
-        {!processingEncoder && imageEmbeddings && (
-          <span style={{ color: "green" }}>
-            <strong>Ready! Click the image to segment.</strong>
-          </span>
-        )}
-      </div>
+      <div style={{ 
+        background: "rgba(30, 30, 46, 0.6)",
+        backdropFilter: "blur(10px)",
+        border: "1px solid rgba(129, 140, 248, 0.2)",
+        borderRadius: "20px",
+        padding: "32px",
+        boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
+      }}>
+        {/* Status Panel */}
+        <div style={{ marginBottom: 30 }}>
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <span style={{ color: "#e4e4e7", fontWeight: 600 }}>Encoder Model</span>
+              <span style={{ color: "#818cf8", fontWeight: 600 }}>{formatPercent(encoderProgress)}%</span>
+            </div>
+            <div
+              style={{
+                background: "rgba(30, 30, 46, 0.8)",
+                height: 8,
+                borderRadius: 8,
+                overflow: "hidden",
+                border: "1px solid rgba(129, 140, 248, 0.2)",
+              }}
+            >
+              <div
+                style={{
+                  background: "linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%)",
+                  width: `${encoderProgress}%`,
+                  height: "100%",
+                  transition: "width 0.3s",
+                  boxShadow: encoderProgress > 0 ? "0 0 10px rgba(99, 102, 241, 0.5)" : "none",
+                }}
+              />
+            </div>
+          </div>
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <span style={{ color: "#e4e4e7", fontWeight: 600 }}>Decoder Model</span>
+              <span style={{ color: "#818cf8", fontWeight: 600 }}>{formatPercent(decoderProgress)}%</span>
+            </div>
+            <div
+              style={{
+                background: "rgba(30, 30, 46, 0.8)",
+                height: 8,
+                borderRadius: 8,
+                overflow: "hidden",
+                border: "1px solid rgba(129, 140, 248, 0.2)",
+              }}
+            >
+              <div
+                style={{
+                  background: "linear-gradient(90deg, #06b6d4 0%, #3b82f6 100%)",
+                  width: `${decoderProgress}%`,
+                  height: "100%",
+                  transition: "width 0.3s",
+                  boxShadow: decoderProgress > 0 ? "0 0 10px rgba(59, 130, 246, 0.5)" : "none",
+                }}
+              />
+            </div>
+          </div>
+        </div>
 
-      {/* Image Container */}
-      <div
-        style={{ position: "relative", display: "inline-block", marginTop: 10 }}
-      >
-        <img
-          ref={imageRef}
-          src={imageUrl}
-          alt="Test"
-          crossOrigin="anonymous"
-          style={{
-            maxWidth: 500,
-            display: "block",
-            border: "1px solid #ccc",
-            cursor: imageEmbeddings ? "crosshair" : "wait",
+        {/* Messages */}
+        <div style={{ minHeight: 50, marginBottom: 20 }}>
+          {processingEncoder && (
+            <div style={{ 
+              padding: "16px 24px",
+              background: "rgba(251, 146, 60, 0.1)",
+              borderRadius: "12px",
+              border: "1px solid rgba(251, 146, 60, 0.3)",
+              textAlign: "center",
+            }}>
+              <p style={{ margin: 0, color: "#fb923c", fontSize: "1.1em" }}>
+                ⚡ Processing image embeddings... (One-time process)
+              </p>
+            </div>
+          )}
+          {!processingEncoder && imageEmbeddings && (
+            <div style={{ 
+              padding: "16px 24px",
+              background: "linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(16, 185, 129, 0.15) 100%)",
+              borderRadius: "12px",
+              border: "1px solid rgba(34, 197, 94, 0.3)",
+              textAlign: "center",
+            }}>
+              <p style={{ margin: 0, color: "#4ade80", fontSize: "1.1em" }}>
+                🎯 <strong>Ready!</strong> Click anywhere on the image to segment objects
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Image Container */}
+        <div
+          style={{ 
+            position: "relative", 
+            display: "inline-block",
+            borderRadius: "12px",
+            overflow: "hidden",
+            boxShadow: "0 8px 20px rgba(99, 102, 241, 0.2)",
           }}
-          onLoad={handleImageLoad}
-          onClick={handleSegmentClick}
-        />
-        <canvas
-          ref={canvasRef}
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            pointerEvents: "none", // Let clicks pass through to image
-            width: "100%",
-            height: "100%",
-          }}
-        />
+        >
+          <img
+            ref={imageRef}
+            src={imageUrl}
+            alt="Test"
+            crossOrigin="anonymous"
+            style={{
+              maxWidth: "100%",
+              width: 600,
+              display: "block",
+              cursor: imageEmbeddings ? "crosshair" : "wait",
+            }}
+            onLoad={handleImageLoad}
+            onClick={handleSegmentClick}
+          />
+          <canvas
+            ref={canvasRef}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              pointerEvents: "none",
+              width: "100%",
+              height: "100%",
+            }}
+          />
+        </div>
       </div>
     </div>
   );
