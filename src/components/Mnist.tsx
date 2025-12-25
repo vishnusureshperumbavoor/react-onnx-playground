@@ -141,51 +141,183 @@ export function Mnist() {
   }
 
   return (
-    <div style={{ padding: 20 }}>
-      <h1>MNIST ONNX Runtime Web</h1>
-      <div>
-        <canvas
-          ref={canvasRef}
-          width={280}
-          height={280}
-          style={{
-            border: "1px solid #ccc",
-            background: "white",
-            touchAction: "none",
-          }}
-          onMouseDown={startDrawing}
-          onMouseMove={draw}
-          onMouseUp={endDrawing}
-          onMouseLeave={endDrawing}
-          onTouchStart={startDrawing}
-          onTouchMove={draw}
-          onTouchEnd={endDrawing}
-        />
-        <div style={{ marginTop: 10 }}>
-          <button onClick={clearCanvas}>Clear</button>
+    <div style={{ padding: "20px", maxWidth: "1000px", margin: "0 auto", height: "100%" }}>
+      <div style={{ textAlign: "center", marginBottom: "20px" }}>
+        <h2 style={{ fontSize: "1.5em", margin: "0" }}>MNIST Recognition</h2>
+        <p style={{ fontSize: "0.9em", color: "#a1a1aa", margin: "8px 0 0 0" }}>
+          Draw a digit and let AI recognize it
+        </p>
+      </div>
+      
+      <div style={{ 
+        background: "rgba(30, 30, 46, 0.6)",
+        backdropFilter: "blur(10px)",
+        border: "1px solid rgba(129, 140, 248, 0.2)",
+        borderRadius: "16px",
+        padding: "20px",
+        display: "flex",
+        gap: "24px",
+        alignItems: "flex-start",
+        boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
+      }}>
+        {/* Left side - Drawing Canvas */}
+        <div style={{ 
+          flex: "1",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: "16px",
+        }}>
+          <canvas
+            ref={canvasRef}
+            width={280}
+            height={280}
+            style={{
+              border: "2px solid rgba(129, 140, 248, 0.3)",
+              borderRadius: "12px",
+              background: "white",
+              touchAction: "none",
+              boxShadow: "0 4px 12px rgba(99, 102, 241, 0.2)",
+            }}
+            onMouseDown={startDrawing}
+            onMouseMove={draw}
+            onMouseUp={endDrawing}
+            onMouseLeave={endDrawing}
+            onTouchStart={startDrawing}
+            onTouchMove={draw}
+            onTouchEnd={endDrawing}
+          />
+          <button 
+            onClick={clearCanvas}
+            style={{
+              width: "100%",
+              maxWidth: "280px",
+              background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
+            }}
+          >
+            <span>🗑️ Clear Canvas</span>
+          </button>
+        </div>
+
+        {/* Right side - Predictions */}
+        <div style={{
+          flex: "0 0 300px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "16px",
+        }}>
+          <div style={{
+            padding: "16px",
+            background: "rgba(99, 102, 241, 0.1)",
+            borderRadius: "12px",
+            border: "1px solid rgba(129, 140, 248, 0.2)",
+          }}>
+            <h3 style={{ 
+              fontSize: "1.1em", 
+              margin: "0 0 12px 0",
+              color: "#e4e4e7",
+            }}>
+              Prediction
+            </h3>
+            
+            {loading && (
+              <div style={{ 
+                padding: "20px",
+                textAlign: "center",
+              }}>
+                <p style={{ margin: 0, color: "#818cf8", fontSize: "0.9em" }}>
+                  🔄 Processing...
+                </p>
+              </div>
+            )}
+            
+            {!loading && output && (
+              <div style={{ 
+                padding: "24px",
+                background: "linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%)",
+                borderRadius: "12px",
+                border: "1px solid rgba(129, 140, 248, 0.3)",
+                textAlign: "center",
+              }}>
+                {(() => {
+                  const exp = Array.from(output).map((v) => Math.exp(v));
+                  const sumExp = exp.reduce((a, b) => a + b, 0);
+                  const probs = exp.map((v) => v / sumExp);
+                  const predIdx = probs.indexOf(Math.max(...probs));
+                  const predProb = probs[predIdx];
+                  return (
+                    <>
+                      <div style={{ 
+                        fontSize: "4em", 
+                        marginBottom: "16px", 
+                        fontWeight: "bold",
+                        background: "linear-gradient(135deg, #818cf8 0%, #c084fc 100%)",
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                        backgroundClip: "text",
+                      }}>
+                        {predIdx}
+                      </div>
+                      <p style={{ 
+                        fontSize: "1.1em", 
+                        color: "#e4e4e7",
+                        margin: "0 0 8px 0",
+                        fontWeight: "600",
+                      }}>
+                        Predicted: <span style={{ color: "#818cf8" }}>{predIdx}</span>
+                      </p>
+                      <p style={{ 
+                        fontSize: "0.95em",
+                        color: "#4ade80",
+                        marginTop: "4px",
+                        marginBottom: 0,
+                        fontWeight: "500",
+                      }}>
+                        ✅ {(predProb * 100).toFixed(1)}% confidence
+                      </p>
+                    </>
+                  );
+                })()}
+              </div>
+            )}
+            
+            {!loading && !output && (
+              <div style={{ 
+                padding: "40px 20px",
+                textAlign: "center",
+                background: "rgba(161, 161, 170, 0.1)",
+                borderRadius: "10px",
+                border: "1px solid rgba(161, 161, 170, 0.2)",
+              }}>
+                <p style={{ 
+                  margin: 0, 
+                  color: "#a1a1aa", 
+                  fontSize: "0.9em",
+                  lineHeight: "1.6",
+                }}>
+                  ✍️ Draw a digit<br/>(0-9) on the canvas
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div style={{
+            padding: "14px",
+            background: "rgba(99, 102, 241, 0.05)",
+            borderRadius: "10px",
+            border: "1px solid rgba(129, 140, 248, 0.15)",
+          }}>
+            <p style={{ 
+              margin: 0, 
+              color: "#a1a1aa", 
+              fontSize: "0.85em",
+              lineHeight: "1.5",
+            }}>
+              💡 <b>Tip:</b> Draw clearly in the center of the canvas for best results
+            </p>
+          </div>
         </div>
       </div>
-      {loading && <p>Loading model or running inference...</p>}
-      {!loading && output && (
-        <>
-          <p>
-            {(() => {
-              const exp = Array.from(output).map((v) => Math.exp(v));
-              const sumExp = exp.reduce((a, b) => a + b, 0);
-              const probs = exp.map((v) => v / sumExp);
-              const predIdx = probs.indexOf(Math.max(...probs));
-              const predProb = probs[predIdx];
-              return (
-                <>
-                  Predicted digit: <b>{predIdx}</b> (
-                  {(predProb * 100).toFixed(2)}% sure)
-                </>
-              );
-            })()}
-          </p>
-        </>
-      )}
-      {!loading && !output && <p>No output from model.</p>}
     </div>
   );
 }

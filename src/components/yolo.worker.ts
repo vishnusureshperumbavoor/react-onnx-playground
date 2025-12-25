@@ -14,6 +14,7 @@ self.onmessage = async (event: MessageEvent) => {
             executionProviders: ["wasm"],
           });
         }
+        console.log("[Worker] Model loaded successfully");
         self.postMessage({ status: "model-loaded" });
         break;
 
@@ -25,7 +26,7 @@ self.onmessage = async (event: MessageEvent) => {
           });
           return;
         }
-
+        
         const modelWidth = 640;
         const modelHeight = 640;
 
@@ -39,9 +40,13 @@ self.onmessage = async (event: MessageEvent) => {
         const feeds = { images: tensor };
         const results = await session.run(feeds);
 
+        // Get the output tensor - YOLOv11 output is typically in shape [1, 84, 8400]
+        const outputTensor = results.output0;
+        
         // The postprocess function now needs the letterboxing info to scale boxes correctly
         const boxes = postprocess(
-          results.output0.data as Float32Array,
+          outputTensor.data as Float32Array,
+          outputTensor.dims,
           xRatio,
           yRatio,
           xPad,
@@ -49,8 +54,12 @@ self.onmessage = async (event: MessageEvent) => {
         );
         self.postMessage({ status: "complete", boxes });
         break;
+      
+      default:
+        console.warn("[Worker] Unknown message type:", type);
     }
   } catch (e: any) {
+    console.error("[Worker] Error:", e);
     self.postMessage({ status: "error", error: e.message });
   }
 };
@@ -124,6 +133,7 @@ interface Box {
 // --- CORRECTED POSTPROCESS FUNCTION WITH LETTERBOXING ---
 function postprocess(
   output: Float32Array,
+  dims: readonly number[],
   xRatio: number,
   yRatio: number,
   xPad: number,
@@ -131,22 +141,47 @@ function postprocess(
 ): Box[] {
   const boxes: Box[] = [];
   const numClasses = 80;
-  const numBoxes = 8400;
+  
+  // YOLOv11 output is typically [1, 84, 8400] which means [batch, features, boxes]
+  // Features are: [x, y, w, h, class1, class2, ..., class80]
+  const isTransposed = dims[1] === 84 || dims[1] < dims[2];
+  const numBoxes = isTransposed ? dims[2] : dims[1];
+  const numFeatures = isTransposed ? dims[1] : dims[2];
 
   for (let i = 0; i < numBoxes; i++) {
-    const classProbs = output.slice(
-      i * (4 + numClasses) + 4,
-      i * (4 + numClasses) + 4 + numClasses
-    );
-    const maxProb = Math.max(...classProbs);
+    let x_center, y_center, w, h;
+    let classProbs: number[] = [];
 
+    if (isTransposed) {
+      // Output format: [1, 84, 8400] - features are in rows, boxes in columns
+      x_center = output[i];
+      y_center = output[numBoxes + i];
+      w = output[2 * numBoxes + i];
+      h = output[3 * numBoxes + i];
+      
+      // Get class probabilities
+      for (let j = 0; j < numClasses; j++) {
+        classProbs.push(output[(4 + j) * numBoxes + i]);
+      }
+    } else {
+      // Output format: [1, 8400, 84] - boxes are in rows, features in columns
+      const offset = i * numFeatures;
+      x_center = output[offset + 0];
+      y_center = output[offset + 1];
+      w = output[offset + 2];
+      h = output[offset + 3];
+      
+      for (let j = 0; j < numClasses; j++) {
+        classProbs.push(output[offset + 4 + j]);
+      }
+    }
+
+    const maxProb = Math.max(...classProbs);
+    
+    // Lower threshold to detect more objects
     if (maxProb < 0.25) continue;
 
     const classIndex = classProbs.indexOf(maxProb);
-    const x_center = output[i * (4 + numClasses) + 0];
-    const y_center = output[i * (4 + numClasses) + 1];
-    const w = output[i * (4 + numClasses) + 2];
-    const h = output[i * (4 + numClasses) + 3];
 
     // Remove padding and scale back to original image dimensions
     const x1 = (x_center - w / 2 - xPad) * xRatio;
@@ -161,7 +196,9 @@ function postprocess(
     });
   }
 
-  return nonMaxSuppression(boxes, 0.5);
+  const filtered = nonMaxSuppression(boxes, 0.45);
+  
+  return filtered;
 }
 
 function nonMaxSuppression(boxes: Box[], iouThreshold: number): Box[] {
