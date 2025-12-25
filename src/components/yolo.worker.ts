@@ -14,6 +14,7 @@ self.onmessage = async (event: MessageEvent) => {
             executionProviders: ["wasm"],
           });
         }
+        console.log("[Worker] Model loaded successfully");
         self.postMessage({ status: "model-loaded" });
         break;
 
@@ -25,7 +26,7 @@ self.onmessage = async (event: MessageEvent) => {
           });
           return;
         }
-
+        
         const modelWidth = 640;
         const modelHeight = 640;
 
@@ -41,7 +42,6 @@ self.onmessage = async (event: MessageEvent) => {
 
         // Get the output tensor - YOLOv11 output is typically in shape [1, 84, 8400]
         const outputTensor = results.output0;
-        console.log("Output shape:", outputTensor.dims);
         
         // The postprocess function now needs the letterboxing info to scale boxes correctly
         const boxes = postprocess(
@@ -54,8 +54,12 @@ self.onmessage = async (event: MessageEvent) => {
         );
         self.postMessage({ status: "complete", boxes });
         break;
+      
+      default:
+        console.warn("[Worker] Unknown message type:", type);
     }
   } catch (e: any) {
+    console.error("[Worker] Error:", e);
     self.postMessage({ status: "error", error: e.message });
   }
 };
@@ -144,8 +148,6 @@ function postprocess(
   const numBoxes = isTransposed ? dims[2] : dims[1];
   const numFeatures = isTransposed ? dims[1] : dims[2];
 
-  console.log(`Processing ${numBoxes} boxes, ${numFeatures} features per box, transposed: ${isTransposed}`);
-
   for (let i = 0; i < numBoxes; i++) {
     let x_center, y_center, w, h;
     let classProbs: number[] = [];
@@ -176,8 +178,8 @@ function postprocess(
 
     const maxProb = Math.max(...classProbs);
     
-    // Increased threshold to reduce false positives
-    if (maxProb < 0.5) continue;
+    // Lower threshold to detect more objects
+    if (maxProb < 0.25) continue;
 
     const classIndex = classProbs.indexOf(maxProb);
 
@@ -194,9 +196,7 @@ function postprocess(
     });
   }
 
-  console.log(`Found ${boxes.length} boxes before NMS`);
   const filtered = nonMaxSuppression(boxes, 0.45);
-  console.log(`Found ${filtered.length} boxes after NMS`);
   
   return filtered;
 }
