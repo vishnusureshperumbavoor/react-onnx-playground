@@ -42,9 +42,11 @@ export const Yolo = () => {
   const [loadingText, setLoadingText] = useState<string>("Initializing...");
   const [isModelReady, setIsModelReady] = useState<boolean>(false);
   const [predictions, setPredictions] = useState<Box[]>([]);
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const workerRef = useRef<Worker | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   // REMOVED: modelBlobRef is no longer needed in the component.
 
   // Initialize Worker and Download/Cache the Model
@@ -114,7 +116,19 @@ export const Yolo = () => {
     );
   };
 
-  // --- (clearPredictions and the drawing useEffect are unchanged) ---
+  // --- Handle image upload ---
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith("image/")) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setUploadedImage(event.target?.result as string);
+        clearPredictions();
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const clearPredictions = () => {
     setPredictions([]);
     const canvas = canvasRef.current;
@@ -184,7 +198,7 @@ export const Yolo = () => {
           }}>
             <img
               ref={imageRef}
-              src={busImage}
+              src={uploadedImage || busImage}
               alt="Preview"
               style={{ 
                 width: "100%", 
@@ -215,6 +229,42 @@ export const Yolo = () => {
           flexDirection: "column",
           gap: "16px",
         }}>
+          {/* Upload Image Section */}
+          <div style={{
+            padding: "16px",
+            background: "rgba(99, 102, 241, 0.1)",
+            borderRadius: "12px",
+            border: "1px solid rgba(129, 140, 248, 0.2)",
+          }}>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              style={{ display: "none" }}
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={!isModelReady}
+              style={{
+                width: "100%",
+                background: "linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)",
+              }}
+            >
+              <span>📁 Upload Image</span>
+            </button>
+            {uploadedImage && (
+              <p style={{ 
+                margin: "8px 0 0 0", 
+                color: "#4ade80", 
+                fontSize: "0.85em",
+                textAlign: "center",
+              }}>
+                ✓ Custom image loaded
+              </p>
+            )}
+          </div>
+
           <div
             style={{
               display: "flex",
