@@ -1,10 +1,8 @@
 import React, { useState, useRef } from "react";
 import { Mnist } from "./Mnist";
 import { Yolo } from "./Yolo";
-import { Sam2Component } from "./Sam2Component";
-import { Sam3Component } from "./Sam3Component";
 
-type TabType = "MNIST" | "YOLOv11" | "SAM2" | "SAM3";
+type TabType = "MNIST" | "YOLOv11";
 
 interface Tab {
   id: string;
@@ -14,17 +12,13 @@ interface Tab {
 
 const tabConfig: Record<TabType, { icon: string; color: string; component: React.ComponentType }> = {
   MNIST: { icon: "✍️", color: "#667eea", component: Mnist },
-  YOLOv11: { icon: "🎯", color: "#f5576c", component: Yolo },
-  SAM2: { icon: "✂️", color: "#4facfe", component: Sam2Component },
-  SAM3: { icon: "🔬", color: "#43e97b", component: Sam3Component },
+  YOLOv11: { icon: "🎯", color: "#f5576c", component: Yolo }
 };
 
 export const TabBrowser: React.FC = () => {
   const [tabs, setTabs] = useState<Tab[]>([
     { id: "tab-1", type: "MNIST", title: "MNIST" },
-    { id: "tab-2", type: "YOLOv11", title: "YOLOv11" },
-    { id: "tab-3", type: "SAM2", title: "SAM2" },
-    { id: "tab-4", type: "SAM3", title: "SAM3" },
+    { id: "tab-2", type: "YOLOv11", title: "YOLOv11" }
   ]);
   const [activeTabId, setActiveTabId] = useState<string>("tab-2");
   const [draggedTab, setDraggedTab] = useState<string | null>(null);
