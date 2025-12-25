@@ -295,41 +295,79 @@ export const Yolo = () => {
     
     if (predictions.length > 0) {
       if (isVideo && video && video.videoWidth > 0 && video.videoHeight > 0) {
-        // For video: match video display size
-        if (canvas.width !== video.clientWidth || canvas.height !== video.clientHeight) {
-          canvas.width = video.clientWidth;
-          canvas.height = video.clientHeight;
+        // For video: match video display size exactly
+        canvas.width = video.clientWidth;
+        canvas.height = video.clientHeight;
+        
+        // Calculate actual displayed video dimensions (accounting for object-fit: contain)
+        const videoAspect = video.videoWidth / video.videoHeight;
+        const displayAspect = video.clientWidth / video.clientHeight;
+        
+        let displayWidth, displayHeight, offsetX, offsetY;
+        
+        if (displayAspect > videoAspect) {
+          // Video is letterboxed horizontally
+          displayHeight = video.clientHeight;
+          displayWidth = video.clientHeight * videoAspect;
+          offsetX = (video.clientWidth - displayWidth) / 2;
+          offsetY = 0;
+        } else {
+          // Video is letterboxed vertically
+          displayWidth = video.clientWidth;
+          displayHeight = video.clientWidth / videoAspect;
+          offsetX = 0;
+          offsetY = (video.clientHeight - displayHeight) / 2;
         }
         
-        const scaleX = video.clientWidth / video.videoWidth;
-        const scaleY = video.clientHeight / video.videoHeight;
+        const scaleX = displayWidth / video.videoWidth;
+        const scaleY = displayHeight / video.videoHeight;
         
         const scaledPredictions = predictions.map(pred => ({
           ...pred,
           box: [
-            pred.box[0] * scaleX,
-            pred.box[1] * scaleY,
-            pred.box[2] * scaleX,
-            pred.box[3] * scaleY,
+            pred.box[0] * scaleX + offsetX,
+            pred.box[1] * scaleY + offsetY,
+            pred.box[2] * scaleX + offsetX,
+            pred.box[3] * scaleY + offsetY,
           ] as [number, number, number, number],
         }));
         
         renderBoxes(canvas, scaledPredictions);
-      } else if (!isVideo && image) {
-        // For image: match image display size
+      } else if (!isVideo && image && image.naturalWidth > 0) {
+        // For image: match image display size exactly
         canvas.width = image.clientWidth;
         canvas.height = image.clientHeight;
         
-        const scaleX = image.clientWidth / image.naturalWidth;
-        const scaleY = image.clientHeight / image.naturalHeight;
+        // Calculate actual displayed image dimensions (accounting for object-fit: contain)
+        const imageAspect = image.naturalWidth / image.naturalHeight;
+        const displayAspect = image.clientWidth / image.clientHeight;
+        
+        let displayWidth, displayHeight, offsetX, offsetY;
+        
+        if (displayAspect > imageAspect) {
+          // Image is letterboxed horizontally
+          displayHeight = image.clientHeight;
+          displayWidth = image.clientHeight * imageAspect;
+          offsetX = (image.clientWidth - displayWidth) / 2;
+          offsetY = 0;
+        } else {
+          // Image is letterboxed vertically
+          displayWidth = image.clientWidth;
+          displayHeight = image.clientWidth / imageAspect;
+          offsetX = 0;
+          offsetY = (image.clientHeight - displayHeight) / 2;
+        }
+        
+        const scaleX = displayWidth / image.naturalWidth;
+        const scaleY = displayHeight / image.naturalHeight;
         
         const scaledPredictions = predictions.map(pred => ({
           ...pred,
           box: [
-            pred.box[0] * scaleX,
-            pred.box[1] * scaleY,
-            pred.box[2] * scaleX,
-            pred.box[3] * scaleY,
+            pred.box[0] * scaleX + offsetX,
+            pred.box[1] * scaleY + offsetY,
+            pred.box[2] * scaleX + offsetX,
+            pred.box[3] * scaleY + offsetY,
           ] as [number, number, number, number],
         }));
         
@@ -345,9 +383,9 @@ export const Yolo = () => {
   }, [predictions, isVideo]);
 
   return (
-    <div style={{ padding: "20px", maxWidth: "1200px", margin: "0 auto" }}>
-      <div style={{ textAlign: "center", marginBottom: "24px" }}>
-        <h2>YOLOv11 Object Detection</h2>
+    <div style={{ padding: "20px", maxWidth: "1000px", margin: "0 auto", height: "100%" }}>
+      <div style={{ textAlign: "center", marginBottom: "20px" }}>
+        <h2 style={{ fontSize: "1.5em", margin: "0" }}>YOLOv11 Object Detection</h2>
       </div>
       
       <div style={{ 
@@ -355,22 +393,25 @@ export const Yolo = () => {
         backdropFilter: "blur(10px)",
         border: "1px solid rgba(129, 140, 248, 0.2)",
         borderRadius: "16px",
-        padding: "24px",
+        padding: "20px",
         boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
         display: "flex",
-        gap: "24px",
+        gap: "20px",
         alignItems: "flex-start",
       }}>
         {/* Left side - Image */}
         <div style={{ 
           flex: "1",
           minWidth: 0,
-          maxWidth: "600px",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
         }}>
           <div style={{ 
             position: "relative", 
             width: "100%",
-            maxHeight: "600px",
+            maxWidth: "600px",
+            maxHeight: "450px",
             borderRadius: "12px",
             overflow: "hidden",
             boxShadow: "0 4px 12px rgba(99, 102, 241, 0.2)",
@@ -383,11 +424,12 @@ export const Yolo = () => {
                 style={{ 
                   width: "100%", 
                   height: "auto",
-                  maxHeight: "600px",
+                  maxHeight: "450px",
                   objectFit: "contain",
                   display: "block",
                   position: "relative",
                   zIndex: 1,
+                  borderRadius: "12px",
                 }}
                 onLoad={clearPredictions}
               />
@@ -398,12 +440,13 @@ export const Yolo = () => {
                 style={{ 
                   width: "100%", 
                   height: "auto",
-                  maxHeight: "600px",
+                  maxHeight: "450px",
                   objectFit: "contain",
                   display: "block",
                   backgroundColor: "#000",
                   position: "relative",
                   zIndex: 1,
+                  borderRadius: "12px",
                 }}
                 controls
                 autoPlay
@@ -416,7 +459,6 @@ export const Yolo = () => {
                   if (canvas && video) {
                     canvas.width = video.clientWidth;
                     canvas.height = video.clientHeight;
-                    console.log(`Video loaded - videoWidth: ${video.videoWidth}, videoHeight: ${video.videoHeight}, clientWidth: ${video.clientWidth}, clientHeight: ${video.clientHeight}`);
                   }
                 }}
               />
@@ -431,6 +473,7 @@ export const Yolo = () => {
                 height: "100%",
                 pointerEvents: "none",
                 zIndex: 10,
+                borderRadius: "12px",
               }}
             />
           </div>
@@ -438,20 +481,20 @@ export const Yolo = () => {
 
         {/* Right side - Controls and Output */}
         <div style={{
-          flex: "0 0 300px",
+          flex: "0 0 280px",
           display: "flex",
           flexDirection: "column",
-          gap: "16px",
+          gap: "12px",
         }}>
           {/* Upload Section */}
           <div style={{
-            padding: "16px",
+            padding: "14px",
             background: "rgba(99, 102, 241, 0.1)",
             borderRadius: "12px",
             border: "1px solid rgba(129, 140, 248, 0.2)",
             display: "flex",
             flexDirection: "column",
-            gap: "10px",
+            gap: "8px",
           }}>
             <input
               ref={fileInputRef}
@@ -513,7 +556,7 @@ export const Yolo = () => {
             style={{
               display: "flex",
               flexDirection: "column",
-              gap: "10px",
+              gap: "8px",
             }}
           >
             <button
@@ -547,12 +590,12 @@ export const Yolo = () => {
           
           {loadingText && (
             <div style={{ 
-              padding: "12px 20px",
+              padding: "10px 14px",
               background: "rgba(99, 102, 241, 0.1)",
-              borderRadius: "10px",
+              borderRadius: "8px",
               border: "1px solid rgba(129, 140, 248, 0.2)",
             }}>
-              <p style={{ margin: 0, color: "#818cf8", fontSize: "0.9em" }}>
+              <p style={{ margin: 0, color: "#818cf8", fontSize: "0.85em" }}>
                 {loadingText}
               </p>
             </div>
@@ -560,12 +603,12 @@ export const Yolo = () => {
           
           {isVideo && isDetecting && (
             <div style={{ 
-              padding: "12px 20px",
+              padding: "10px 14px",
               background: "linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(22, 163, 74, 0.15) 100%)",
-              borderRadius: "10px",
+              borderRadius: "8px",
               border: "1px solid rgba(34, 197, 94, 0.3)",
             }}>
-              <p style={{ margin: 0, color: "#4ade80", fontSize: "0.95em" }}>
+              <p style={{ margin: 0, color: "#4ade80", fontSize: "0.85em" }}>
                 🔄 Live detection active
               </p>
             </div>
@@ -573,12 +616,12 @@ export const Yolo = () => {
 
           {predictions.length > 0 && (
             <div style={{ 
-              padding: "12px 20px",
+              padding: "10px 14px",
               background: "linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%)",
-              borderRadius: "10px",
+              borderRadius: "8px",
               border: "1px solid rgba(129, 140, 248, 0.3)",
             }}>
-              <p style={{ margin: 0, color: "#e4e4e7", fontSize: "0.95em" }}>
+              <p style={{ margin: 0, color: "#e4e4e7", fontSize: "0.85em" }}>
                 ✅ Detected <b style={{ color: "#818cf8" }}>{predictions.length}</b> object(s)
               </p>
             </div>
@@ -586,12 +629,12 @@ export const Yolo = () => {
 
           {!loadingText && !predictions.length && isModelReady && (
             <div style={{ 
-              padding: "12px 20px",
+              padding: "10px 14px",
               background: "rgba(161, 161, 170, 0.1)",
-              borderRadius: "10px",
+              borderRadius: "8px",
               border: "1px solid rgba(161, 161, 170, 0.2)",
             }}>
-              <p style={{ margin: 0, color: "#a1a1aa", fontSize: "0.9em" }}>
+              <p style={{ margin: 0, color: "#a1a1aa", fontSize: "0.85em" }}>
                 Click "Detect Objects" to analyze the image
               </p>
             </div>
