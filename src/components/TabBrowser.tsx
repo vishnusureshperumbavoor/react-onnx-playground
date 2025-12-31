@@ -1,8 +1,10 @@
 import React, { useState, useRef } from "react";
 import { Mnist } from "./Mnist";
 import { Yolo } from "./Yolo";
+import { YoloSegmentation } from "./YoloSegmentation";
+import { YoloSam2 } from "./YoloSam2";
 
-type TabType = "MNIST" | "YOLOv11";
+type TabType = "MNIST" | "YOLOv11" | "YOLOv11-Seg" | "YOLOv11-SAM2";
 
 interface Tab {
   id: string;
@@ -12,13 +14,17 @@ interface Tab {
 
 const tabConfig: Record<TabType, { icon: string; color: string; component: React.ComponentType }> = {
   MNIST: { icon: "✍️", color: "#667eea", component: Mnist },
-  YOLOv11: { icon: "🎯", color: "#f5576c", component: Yolo }
+  YOLOv11: { icon: "🎯", color: "#f5576c", component: Yolo },
+  "YOLOv11-Seg": { icon: "🎨", color: "#10b981", component: YoloSegmentation },
+  "YOLOv11-SAM2": { icon: "🚀", color: "#f093fb", component: YoloSam2 }
 };
 
 export const TabBrowser: React.FC = () => {
   const [tabs, setTabs] = useState<Tab[]>([
     { id: "tab-1", type: "MNIST", title: "MNIST" },
-    { id: "tab-2", type: "YOLOv11", title: "YOLOv11" }
+    { id: "tab-2", type: "YOLOv11", title: "YOLOv11" },
+    { id: "tab-3", type: "YOLOv11-Seg", title: "YOLOv11-Seg" },
+    { id: "tab-4", type: "YOLOv11-SAM2", title: "YOLOv11 + SAM2" }
   ]);
   const [activeTabId, setActiveTabId] = useState<string>("tab-2");
   const [draggedTab, setDraggedTab] = useState<string | null>(null);
@@ -28,7 +34,7 @@ export const TabBrowser: React.FC = () => {
     const newTabs = tabs.filter((tab) => tab.id !== tabId);
     if (newTabs.length === 0) {
       // If closing the last tab, add a default one
-      const defaultTab = { id: `tab-${tabIdCounter.current++}`, type: "YOLOv11" as TabType, title: "YOLOv11" };
+      const defaultTab = { id: `tab-${tabIdCounter.current++}`, type: "YOLOv11-Seg" as TabType, title: "YOLOv11-Seg" };
       setTabs([defaultTab]);
       setActiveTabId(defaultTab.id);
     } else {

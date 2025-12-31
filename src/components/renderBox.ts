@@ -109,9 +109,14 @@ interface Box {
   classId: number;
   probability: number;
   box: [number, number, number, number];
+  mask?: Float32Array;
 }
 
-export function renderBoxes(canvas: HTMLCanvasElement, boxes: Box[]) {
+export function renderBoxes(
+  canvas: HTMLCanvasElement,
+  boxes: Box[],
+  sourceElement?: HTMLImageElement | HTMLVideoElement
+) {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
 
@@ -126,10 +131,17 @@ export function renderBoxes(canvas: HTMLCanvasElement, boxes: Box[]) {
     const label = Cocolabels[box.classId];
     const color = colors[box.classId % colors.length];
 
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 2;
-    ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+    // Render segmentation mask if available
+    if (box.mask && sourceElement) {
+      renderMask(ctx, box, color, sourceElement);
+    } else {
+      // Fallback to bounding box if no mask
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+    }
 
+    // Draw label
     ctx.fillStyle = color;
     const textWidth = ctx.measureText(
       `${label} ${(box.probability * 100).toFixed(1)}%`
@@ -144,4 +156,68 @@ export function renderBoxes(canvas: HTMLCanvasElement, boxes: Box[]) {
       y1 - textHeight
     );
   });
+}
+
+function renderMask(
+  ctx: CanvasRenderingContext2D,
+  box: Box,
+  color: string,
+  _sourceElement: HTMLImageElement | HTMLVideoElement
+) {
+  if (!box.mask || box.mask.length === 0) return;
+
+  const [x1, y1, x2, y2] = box.box;
+  const boxWidth = Math.max(1, Math.floor(x2 - x1));
+  const boxHeight = Math.max(1, Math.floor(y2 - y1));
+
+  // Calculate mask dimensions (mask is already resized to box size in worker)
+  const maskSize = Math.sqrt(box.mask.length);
+  const maskWidth = Math.floor(maskSize);
+  const maskHeight = Math.floor(maskSize);
+
+  // Create a temporary canvas for the mask
+  const maskCanvas = document.createElement("canvas");
+  maskCanvas.width = boxWidth;
+  maskCanvas.height = boxHeight;
+  const maskCtx = maskCanvas.getContext("2d");
+  if (!maskCtx) return;
+
+  // Convert mask data to image data
+  const maskData = maskCtx.createImageData(boxWidth, boxHeight);
+  const maskArray = box.mask;
+
+  // Parse color
+  const r = parseInt(color.slice(1, 3), 16);
+  const g = parseInt(color.slice(3, 5), 16);
+  const b = parseInt(color.slice(5, 7), 16);
+
+  // Apply mask with color overlay
+  for (let y = 0; y < boxHeight; y++) {
+    for (let x = 0; x < boxWidth; x++) {
+      // Sample from mask (which is already resized to box dimensions)
+      const maskX = Math.floor((x / boxWidth) * maskWidth);
+      const maskY = Math.floor((y / boxHeight) * maskHeight);
+      const maskIndex = Math.min(maskY * maskWidth + maskX, maskArray.length - 1);
+      const maskValue = Math.max(0, Math.min(1, maskArray[maskIndex]));
+
+      const pixelIndex = (y * boxWidth + x) * 4;
+      maskData.data[pixelIndex] = r; // R
+      maskData.data[pixelIndex + 1] = g; // G
+      maskData.data[pixelIndex + 2] = b; // B
+      maskData.data[pixelIndex + 3] = Math.floor(maskValue * 180); // Alpha (semi-transparent)
+    }
+  }
+
+  maskCtx.putImageData(maskData, 0, 0);
+
+  // Draw the mask on the main canvas
+  ctx.save();
+  ctx.globalAlpha = 0.5;
+  ctx.drawImage(maskCanvas, x1, y1, boxWidth, boxHeight);
+  ctx.restore();
+
+  // Draw border
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x1, y1, boxWidth, boxHeight);
 }
